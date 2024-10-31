@@ -27,6 +27,7 @@ class _A133ScreenState extends State<A133Screen> {
   final List<String> _hexCodeSent = [];
   late TextEditingController _textController;
   Timer? _normalPacketTimer;
+  ValueNotifier<DateTime?> lastNormalPacketSent = ValueNotifier<DateTime?>(null);
 
   Future<bool> _connectTo(UsbDevice? device) async {
     _serialData.clear();
@@ -86,7 +87,10 @@ class _A133ScreenState extends State<A133Screen> {
     var response = await _transaction?.transaction(_port!, Uint8List
         .fromList(dataToSend!), const Duration(seconds: 1));
 
-    if (isNormalPacket) return;
+    if (isNormalPacket) {
+      lastNormalPacketSent.value = DateTime.now();
+      return;
+    }
 
     _dealWithHexSent(dataToSend!);
 
@@ -211,40 +215,86 @@ class _A133ScreenState extends State<A133Screen> {
                       ),
                     ),
                     const SizedBox(height: 40),
-                    Text(
-                        'Choose speed command in km/h:',
-                        style: Theme.of(context).textTheme.headline6),
-                    SizedBox(
-                      width: 300,
-                      child: ListTile(
-                        title: TextField(
-                          controller: _textController,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'type speed',
-                          ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Column(
+                          children: [
+                            Text(
+                                'Choose speed command in km/h:',
+                                style: Theme.of(context).textTheme.headline6),
+                            SizedBox(
+                              width: 300,
+                              child: ListTile(
+                                title: TextField(
+                                  controller: _textController,
+                                  decoration: const InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    labelText: 'type speed',
+                                  ),
+                                ),
+                                trailing: ElevatedButton(
+                                  onPressed: _port == null
+                                      ? null
+                                      : () async {
+                                    if (_port == null) {
+                                      return;
+                                    }
+                                    int data = int.parse(_textController.text);
+                                    List<int>? dataToSend =
+                                    A133Protocol.formatOneParameterCmd(value: data,
+                                        commandType: A133CommandTypes.writeOneParam,
+                                        parameterIndex: A133ParameterIndexTypes.setSpeed);
+                                    await _sendCommand(dataToSend, isNormalPacket: false);
+                                  },
+                                  child: const Text("Send"),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        trailing: ElevatedButton(
-                          onPressed: _port == null
-                              ? null
-                              : () async {
-                            if (_port == null) {
-                              return;
-                            }
-                            int data = int.parse(_textController.text);
-                            List<int>? dataToSend =
-                            A133Protocol.formatOneParameterCmd(value: data,
-                                commandType: A133CommandTypes.writeOneParam,
-                                parameterIndex: A133ParameterIndexTypes.setSpeed);
-                            await _sendCommand(dataToSend, isNormalPacket: false);
+                        const SizedBox(width: 40),
+                        ElevatedButton(
+                          onPressed: () {
+                            _normalPacketTimer?.cancel();
                           },
-                          child: const Text("Send"),
+                          child: const Text("Stop Normal Data Packet"),
                         ),
-                      ),
+                        const SizedBox(width: 20),
+                        ElevatedButton(
+                          onPressed: () {
+                            _initNormalPacketTimer();
+                          },
+                          child: const Text("Restart Normal Data Packet"),
+                        ),
+                      ],
                     ),
-                    Text('Command sent to treadmill: $_hexCodeSent'),
-                    const Text("Result Data"),
-                    ..._serialData,
+                    const SizedBox(height: 40),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Column(
+                          children: [
+                            const Text('Periodic Normal Data Packet call'),
+                            ValueListenableBuilder(
+                                valueListenable: lastNormalPacketSent,
+                                builder: (BuildContext context, DateTime? lastCmdSent, Widget? child) {
+                                  return Text(
+                                      'Last call: ${lastCmdSent ?? ''}'
+                                  );
+                                }),
+                          ],
+                        ),
+                        const SizedBox(width: 40),
+                        Column(
+                          children: [
+                            Text('Command sent to treadmill: $_hexCodeSent'),
+                            const Text("Result Data"),
+                            ..._serialData,
+                          ],
+                        ),
+                      ],
+                    ),
                   ]),
             ),
           ),
