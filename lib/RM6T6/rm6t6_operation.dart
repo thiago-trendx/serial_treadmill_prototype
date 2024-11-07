@@ -82,9 +82,19 @@ class _MyAppState extends State<MyApp> {
         .fromList(dataToSend!), const Duration(seconds: 1));
     print("aqui a resposta: $response");
     _dealWithHexSent(dataToSend!);
-    setState(() {
-      _serialData.add(Text('${response.toString()}\n'));
-    });
+    if (response != null) {
+      List<String> responseHex = [];
+      for (var num in response) {
+        responseHex.add(num.toRadixString(16));
+      }
+      setState(() {
+        _serialData.add(Text('$responseHex\n'));
+      });
+    } else {
+      setState(() {
+        _serialData.add(Text('${response.toString()}\n'));
+      });
+    }
   }
 
   void _getPorts() async {
@@ -163,17 +173,22 @@ class _MyAppState extends State<MyApp> {
                                 [0xf6, 0x10, 0x8c, 0xbe, 0xf4]),
                             _commandButton('Illegal command',
                                 [0xf6, 0x00, 0x00, 0x00, 0xf4]),
-                            _commandButton('Stop command 0xff',
-                                [0xf6, 0xa0, 0xff, 0xf7, 0x00, 0x39, 0xf4]),
-                            _commandButton('Stop command 0xc0',
-                                [0xf6, 0xa0, 0xc0, 0xe0, 0x79, 0xf4]),
-                            _commandButton('Stop command 0x00',
-                                [0xf6, 0xa0, 0x00, 0xb0, 0x79, 0xf4]),
-                            _commandButton('Encavalado',
-                                [0xf6, 0x98, 0x00, 0x85, 0x8c, 0x31, 0xf4,
-                                  0xf6, 0x90, 0x09, 0x60, 0x95, 0x77, 0xf4,]),
+                            // _commandButton('Encavalado',
+                            //     [0xf6, 0x98, 0x00, 0x85, 0x8c, 0x31, 0xf4,
+                            //       0xf6, 0x90, 0x09, 0x60, 0x95, 0x77, 0xf4,]),
                           ],
                         ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _commandButton('Stop command 0xff',
+                              [0xf6, 0xa0, 0xff, 0xf7, 0x00, 0x39, 0xf4]),
+                          _commandButton('Stop command 0xc0',
+                              [0xf6, 0xa0, 0xc0, 0xe0, 0x79, 0xf4]),
+                          _commandButton('Stop command 0x00',
+                              [0xf6, 0xa0, 0x00, 0xb0, 0x79, 0xf4]),
+                        ],
                       ),
                       SizedBox(
                         width: 300,
@@ -182,7 +197,7 @@ class _MyAppState extends State<MyApp> {
                             controller: _textController,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
-                              labelText: 'Text To Send',
+                              labelText: 'Send frequency in Hz',
                             ),
                           ),
                           trailing: ElevatedButton(
