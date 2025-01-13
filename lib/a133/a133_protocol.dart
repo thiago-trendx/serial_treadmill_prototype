@@ -7,6 +7,7 @@ abstract class A133Protocol {
        required A133ParameterIndexTypes parameterIndex,
        num? value,
       }) {
+    bool avoidMultiplication = parameterIndex == A133ParameterIndexTypes.setInclination;
     List<int> startFlag = [0xff];
     List<int> functionCode = [commandType.toFunctionCode()];
     List<int> paramIndex = [parameterIndex.toParameterIndex()];
@@ -14,7 +15,7 @@ abstract class A133Protocol {
     late List<int> parameterValueSplit;
     if (value != null) {
       parameterValueRaw = _getDataFormatted(
-          value: value, multFactor: commandType.toMultiplicationFactor());
+          value: value, multFactor: commandType.toMultiplicationFactor(avoidMultiplication));
       parameterValueSplit = _splitCode(parameterValueRaw);
     } else {
       parameterValueSplit = [];

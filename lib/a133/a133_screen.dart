@@ -25,7 +25,8 @@ class _A133ScreenState extends State<A133Screen> {
   UsbDevice? _device;
 
   final List<String> _hexCodeSent = [];
-  late TextEditingController _textController;
+  late TextEditingController _speedTextController;
+  late TextEditingController _inclinationTextController;
   Timer? _normalPacketTimer;
   ValueNotifier<DateTime?> lastNormalPacketSent = ValueNotifier<DateTime?>(null);
 
@@ -135,7 +136,8 @@ class _A133ScreenState extends State<A133Screen> {
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController();
+    _speedTextController = TextEditingController();
+    _inclinationTextController = TextEditingController();
     UsbSerial.usbEventStream!.listen((UsbEvent event) {
       _getPorts();
     });
@@ -146,7 +148,8 @@ class _A133ScreenState extends State<A133Screen> {
   @override
   void dispose() {
     super.dispose();
-    _textController.dispose();
+    _speedTextController.dispose();
+    _inclinationTextController.dispose();
     _normalPacketTimer?.cancel();
     _normalPacketTimer = null;
     _connectTo(null);
@@ -207,10 +210,6 @@ class _A133ScreenState extends State<A133Screen> {
                               commandType: A133CommandTypes.readMultipleParams,
                               parameterIndex: A133ParameterIndexTypes.dataPacket
                           ),
-                          _oneParamButton(title: 'Read Normal Data Packet',
-                              commandType: A133CommandTypes.readMultipleParams,
-                              parameterIndex: A133ParameterIndexTypes.normalDataPacket
-                          ),
                         ],
                       ),
                     ),
@@ -227,7 +226,7 @@ class _A133ScreenState extends State<A133Screen> {
                               width: 300,
                               child: ListTile(
                                 title: TextField(
-                                  controller: _textController,
+                                  controller: _speedTextController,
                                   decoration: const InputDecoration(
                                     border: OutlineInputBorder(),
                                     labelText: 'type speed',
@@ -240,7 +239,7 @@ class _A133ScreenState extends State<A133Screen> {
                                     if (_port == null) {
                                       return;
                                     }
-                                    int data = int.parse(_textController.text);
+                                    int data = int.parse(_speedTextController.text);
                                     List<int>? dataToSend =
                                     A133Protocol.formatOneParameterCmd(value: data,
                                         commandType: A133CommandTypes.writeOneParam,
@@ -254,18 +253,58 @@ class _A133ScreenState extends State<A133Screen> {
                           ],
                         ),
                         const SizedBox(width: 40),
-                        ElevatedButton(
-                          onPressed: () {
-                            _normalPacketTimer?.cancel();
-                          },
-                          child: const Text("Stop Normal Data Packet"),
+                        Column(
+                          children: [
+                            Text(
+                                'Choose inclination command:',
+                                style: Theme.of(context).textTheme.headline6),
+                            SizedBox(
+                              width: 300,
+                              child: ListTile(
+                                title: TextField(
+                                  controller: _inclinationTextController,
+                                  decoration: const InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    labelText: 'type inclination',
+                                  ),
+                                ),
+                                trailing: ElevatedButton(
+                                  onPressed: _port == null
+                                      ? null
+                                      : () async {
+                                    if (_port == null) {
+                                      return;
+                                    }
+                                    int data = int.parse(_inclinationTextController.text);
+                                    List<int>? dataToSend =
+                                    A133Protocol.formatOneParameterCmd(value: data,
+                                        commandType: A133CommandTypes.writeOneParam,
+                                        parameterIndex: A133ParameterIndexTypes.setInclination);
+                                    await _sendCommand(dataToSend, isNormalPacket: false);
+                                  },
+                                  child: const Text("Send"),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 20),
-                        ElevatedButton(
-                          onPressed: () {
-                            _initNormalPacketTimer();
-                          },
-                          child: const Text("Restart Normal Data Packet"),
+                        const SizedBox(width: 40),
+                        Column(
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                _normalPacketTimer?.cancel();
+                              },
+                              child: const Text("Stop Normal Data Packet"),
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton(
+                              onPressed: () {
+                                _initNormalPacketTimer();
+                              },
+                              child: const Text("Restart Normal Data Packet"),
+                            ),
+                          ],
                         ),
                       ],
                     ),
