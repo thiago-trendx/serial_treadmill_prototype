@@ -70,8 +70,8 @@ extension InstructionCode on A133InstructionTypes {
 /// Parameter Index
 
 enum A133ParameterIndexTypes {
-  dataPacket, normalDataPacket,
-  setSpeed, actualSpeed,
+  dataPacket, normalDataPacket, setSpeed,
+  actualSpeed, liftSegments, saveSettingParameters,
 }
 
 extension IndexParameter on A133ParameterIndexTypes {
@@ -85,6 +85,10 @@ extension IndexParameter on A133ParameterIndexTypes {
         return 0x23;
       case A133ParameterIndexTypes.actualSpeed:
         return 0x24;
+      case A133ParameterIndexTypes.liftSegments:
+        return 0x14;
+      case A133ParameterIndexTypes.saveSettingParameters:
+        return 0x64;
     }
   }
 }
