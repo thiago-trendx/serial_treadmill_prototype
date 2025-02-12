@@ -27,10 +27,7 @@ extension FunctionCode on A133CommandTypes {
 }
 
 extension MultiplicationFactor on A133CommandTypes {
-  int toMultiplicationFactor(bool avoidMulti) {
-    if (avoidMulti) {
-      return 1;
-    }
+  int toMultiplicationFactor() {
     switch (this) {
       case A133CommandTypes.writeControlCommand:
       case A133CommandTypes.readControlCommand:
@@ -75,6 +72,8 @@ extension InstructionCode on A133InstructionTypes {
 enum A133ParameterIndexTypes {
   dataPacket, normalDataPacket,
   setSpeed, actualSpeed, setInclination
+  dataPacket, normalDataPacket, setSpeed,
+  actualSpeed, liftSegments, saveSettingParameters,
 }
 
 extension IndexParameter on A133ParameterIndexTypes {
@@ -90,6 +89,10 @@ extension IndexParameter on A133ParameterIndexTypes {
         return 0x24;
       case A133ParameterIndexTypes.setInclination:
         return 0x2a;
+      case A133ParameterIndexTypes.liftSegments:
+        return 0x14;
+      case A133ParameterIndexTypes.saveSettingParameters:
+        return 0x64;
     }
   }
 }

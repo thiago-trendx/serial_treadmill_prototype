@@ -21,6 +21,7 @@ class _A133ScreenState extends State<A133Screen> {
   String _status = "Idle";
   List<Widget> _ports = [];
   final List<Widget> _serialData = [];
+  final List<Widget> _normalDataAnswer = [];
   Transaction<Uint8List>? _transaction;
   UsbDevice? _device;
 
@@ -32,6 +33,7 @@ class _A133ScreenState extends State<A133Screen> {
 
   Future<bool> _connectTo(UsbDevice? device) async {
     _serialData.clear();
+    _normalDataAnswer.clear();
     if (_transaction != null) {
       _transaction!.dispose();
       _transaction = null;
@@ -90,6 +92,20 @@ class _A133ScreenState extends State<A133Screen> {
 
     if (isNormalPacket) {
       lastNormalPacketSent.value = DateTime.now();
+
+      List<String> hexResponse = [];
+      if (response != null) {
+        for (var num in response) {
+          hexResponse.add(num.toRadixString(16));
+        }
+      }
+      setState(() {
+        if (response != null) {
+          _normalDataAnswer.add(Text('$hexResponse\n'));
+        } else {
+          _normalDataAnswer.add(Text('${response.toString()}\n'));
+        }
+      });
       return;
     }
 
@@ -210,6 +226,25 @@ class _A133ScreenState extends State<A133Screen> {
                               commandType: A133CommandTypes.readMultipleParams,
                               parameterIndex: A133ParameterIndexTypes.dataPacket
                           ),
+                          _oneParamButton(title: 'Read Normal Data Packet',
+                              commandType: A133CommandTypes.readMultipleParams,
+                              parameterIndex: A133ParameterIndexTypes.normalDataPacket
+                          ),
+                          _oneParamButton(title: 'Calibrate Lift Segments v01',
+                              commandType: A133CommandTypes.writeOneParam,
+                              parameterIndex: A133ParameterIndexTypes.liftSegments,
+                              value: 1.5
+                          ),
+                          _oneParamButton(title: 'Calibrate Lift Segments v02',
+                              commandType: A133CommandTypes.writeControlCommand,
+                              parameterIndex: A133ParameterIndexTypes.liftSegments,
+                              value: 15
+                          ),
+                          _oneParamButton(title: 'Save Calibration Parameters',
+                              commandType: A133CommandTypes.writeOneParam,
+                              parameterIndex: A133ParameterIndexTypes.saveSettingParameters,
+                              value: 0.1
+                          ),
                         ],
                       ),
                     ),
@@ -311,6 +346,7 @@ class _A133ScreenState extends State<A133Screen> {
                     const SizedBox(height: 40),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Column(
                           children: [
@@ -322,13 +358,15 @@ class _A133ScreenState extends State<A133Screen> {
                                       'Last call: ${lastCmdSent ?? ''}'
                                   );
                                 }),
+                            const Text("Answer for sent command"),
+                            ..._normalDataAnswer,
                           ],
                         ),
                         const SizedBox(width: 40),
                         Column(
                           children: [
                             Text('Command sent to treadmill: $_hexCodeSent'),
-                            const Text("Result Data"),
+                            const Text("Answer for sent command"),
                             ..._serialData,
                           ],
                         ),
