@@ -28,6 +28,8 @@ class _A133ScreenState extends State<A133Screen> {
   late TextEditingController _textController;
   Timer? _normalPacketTimer;
   ValueNotifier<DateTime?> lastNormalPacketSent = ValueNotifier<DateTime?>(null);
+  ValueNotifier<int?> rotation = ValueNotifier<int?>(null);
+  ValueNotifier<int?> resistance = ValueNotifier<int?>(null);
 
   Future<bool> _connectTo(UsbDevice? device) async {
     _serialData.clear();
@@ -89,7 +91,9 @@ class _A133ScreenState extends State<A133Screen> {
 
     if (isNormalPacket) {
       lastNormalPacketSent.value = DateTime.now();
-      return;
+      rotation.value = response?[6];
+      resistance.value = (response![5] << 8) | response[4];
+      //return;
     }
 
     _dealWithHexSent(dataToSend!);
@@ -100,6 +104,7 @@ class _A133ScreenState extends State<A133Screen> {
         hexResponse.add(num.toRadixString(16));
       }
     }
+    print(hexResponse);
     setState(() {
       if (response != null) {
         _serialData.add(Text('$hexResponse\n'));
@@ -288,9 +293,26 @@ class _A133ScreenState extends State<A133Screen> {
                         const SizedBox(width: 40),
                         Column(
                           children: [
-                            Text('Command sent to treadmill: $_hexCodeSent'),
-                            const Text("Result Data"),
-                            ..._serialData,
+                            ValueListenableBuilder(
+                                valueListenable: rotation,
+                                builder: (BuildContext context, int? value, Widget? child) {
+                                  return Text(
+                                      'ROTAÇÃO: $value',
+                                    style: const TextStyle(fontSize: 20),
+                                  );
+                                }),
+                            const SizedBox(height: 15),
+                            ValueListenableBuilder(
+                                valueListenable: resistance,
+                                builder: (BuildContext context, int? value, Widget? child) {
+                                  return Text(
+                                      'RESISTÊNCIA: $value',
+                                    style: const TextStyle(fontSize: 20),
+                                  );
+                                }),
+                            // Text('Command sent to treadmill: $_hexCodeSent'),
+                            // const Text("Result Data"),
+                            // ..._serialData,
                           ],
                         ),
                       ],
