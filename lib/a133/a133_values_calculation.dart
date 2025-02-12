@@ -69,9 +69,9 @@ class A133ValuesCalculation {
   List<int> rpmHeaders = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
   // Função para procurar o valor na tabela baseado na resistência e no RPM
-  double _getInterpolatedValue(double resistance, int rpm) {
+  double _getInterpolatedValue(int resistance, int rpm) {
     // Encontrar o index da resistência na tabela
-    int resistanceIndex = resistance.toInt() - 1;
+    int resistanceIndex = resistance - 1;
 
     // Encontrar o index do RPM na lista de headers
     int rpmIndex = rpmHeaders.indexOf(rpm);

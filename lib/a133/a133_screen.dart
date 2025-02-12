@@ -320,9 +320,9 @@ class _A133ScreenState extends State<A133Screen> {
                                     style: const TextStyle(fontSize: 20),
                                   );
                                 }),
-                            // Text('Command sent to treadmill: $_hexCodeSent'),
-                            // const Text("Result Data"),
-                            // ..._serialData,
+                            Text('Command sent to treadmill: $_hexCodeSent'),
+                            const Text("Result Data"),
+                            ..._serialData,
                           ],
                         ),
                       ],
