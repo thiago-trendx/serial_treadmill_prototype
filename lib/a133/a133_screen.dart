@@ -7,6 +7,7 @@ import 'package:usb_serial_for_android/usb_event.dart';
 import 'package:usb_serial_for_android/usb_port.dart';
 import 'package:usb_serial_for_android/usb_serial_for_android.dart';
 import 'a133_command_enums.dart';
+import 'a133_metrics.dart';
 import 'a133_protocol.dart';
 
 class A133Screen extends StatefulWidget {
@@ -28,8 +29,7 @@ class _A133ScreenState extends State<A133Screen> {
   late TextEditingController _textController;
   Timer? _normalPacketTimer;
   ValueNotifier<DateTime?> lastNormalPacketSent = ValueNotifier<DateTime?>(null);
-  ValueNotifier<int?> rotation = ValueNotifier<int?>(null);
-  ValueNotifier<int?> resistance = ValueNotifier<int?>(null);
+
 
   Future<bool> _connectTo(UsbDevice? device) async {
     _serialData.clear();
@@ -91,8 +91,9 @@ class _A133ScreenState extends State<A133Screen> {
 
     if (isNormalPacket) {
       lastNormalPacketSent.value = DateTime.now();
-      rotation.value = response?[6];
-      resistance.value = (response![5] << 8) | response[4];
+      A133Metrics.instance.getMetricsFromPacket(
+        normalDtaPacket: response!
+      );
       //return;
     }
 
@@ -294,7 +295,7 @@ class _A133ScreenState extends State<A133Screen> {
                         Column(
                           children: [
                             ValueListenableBuilder(
-                                valueListenable: rotation,
+                                valueListenable: A133Metrics.instance.rotation,
                                 builder: (BuildContext context, int? value, Widget? child) {
                                   return Text(
                                       'ROTAÇÃO: $value',
@@ -303,10 +304,19 @@ class _A133ScreenState extends State<A133Screen> {
                                 }),
                             const SizedBox(height: 15),
                             ValueListenableBuilder(
-                                valueListenable: resistance,
+                                valueListenable: A133Metrics.instance.resistance,
                                 builder: (BuildContext context, int? value, Widget? child) {
                                   return Text(
                                       'RESISTÊNCIA: $value',
+                                    style: const TextStyle(fontSize: 20),
+                                  );
+                                }),
+                            const SizedBox(height: 15),
+                            ValueListenableBuilder(
+                                valueListenable: A133Metrics.instance.power,
+                                builder: (BuildContext context, int? value, Widget? child) {
+                                  return Text(
+                                    'POTÊNCIA: $value',
                                     style: const TextStyle(fontSize: 20),
                                   );
                                 }),
