@@ -226,14 +226,10 @@ class _A133ScreenState extends State<A133Screen> {
                               commandType: A133CommandTypes.readMultipleParams,
                               parameterIndex: A133ParameterIndexTypes.dataPacket
                           ),
-                          _oneParamButton(title: 'Read Normal Data Packet',
-                              commandType: A133CommandTypes.readMultipleParams,
-                              parameterIndex: A133ParameterIndexTypes.normalDataPacket
-                          ),
                           _oneParamButton(title: 'Calibrate Lift Segments v01',
                               commandType: A133CommandTypes.writeOneParam,
                               parameterIndex: A133ParameterIndexTypes.liftSegments,
-                              value: 1.5
+                              value: 15
                           ),
                           _oneParamButton(title: 'Calibrate Lift Segments v02',
                               commandType: A133CommandTypes.writeControlCommand,
@@ -243,7 +239,7 @@ class _A133ScreenState extends State<A133Screen> {
                           _oneParamButton(title: 'Save Calibration Parameters',
                               commandType: A133CommandTypes.writeOneParam,
                               parameterIndex: A133ParameterIndexTypes.saveSettingParameters,
-                              value: 0.1
+                              value: 1
                           ),
                         ],
                       ),
