@@ -80,8 +80,8 @@ class _A133ScreenState extends State<A133Screen> {
 
   Future<void> _initNormalPacketTimer() async {
     _normalPacketTimer?.cancel();
-    _normalPacketTimer = Timer.periodic(const Duration(milliseconds: 150), (Timer t) async {
-      List<int> normalDataPacket = [0xff, 0x41, 0x01, 0x8f, 0xbe, 0xfe];
+    _normalPacketTimer = Timer.periodic(const Duration(milliseconds: 1000), (Timer t) async {
+      List<int> normalDataPacket = [0xff, 0x21, 0x91, 0x53, 0x4f, 0xfe];
       await _sendCommand(normalDataPacket, isNormalPacket: true);
     });
   }
@@ -101,9 +101,14 @@ class _A133ScreenState extends State<A133Screen> {
       }
       setState(() {
         if (response != null) {
-          _normalDataAnswer.add(Text('$hexResponse\n'));
+          if (response[4] != 0 || response[5] != 0) {
+            _normalDataAnswer.insert(0,
+                Text('$hexResponse\n', style: const TextStyle(color: Colors.red)));
+          } else {
+            _normalDataAnswer.insert(0, Text('$hexResponse\n'));
+          }
         } else {
-          _normalDataAnswer.add(Text('${response.toString()}\n'));
+          _normalDataAnswer.insert(0, Text('${response.toString()}\n'));
         }
       });
       return;
@@ -119,9 +124,9 @@ class _A133ScreenState extends State<A133Screen> {
     }
     setState(() {
       if (response != null) {
-        _serialData.add(Text('$hexResponse\n'));
+        _serialData.insert(0, Text('$hexResponse\n'));
       } else {
-        _serialData.add(Text('${response.toString()}\n'));
+        _serialData.insert(0, Text('${response.toString()}\n'));
       }
     });
   }
@@ -226,12 +231,7 @@ class _A133ScreenState extends State<A133Screen> {
                               commandType: A133CommandTypes.readMultipleParams,
                               parameterIndex: A133ParameterIndexTypes.dataPacket
                           ),
-                          _oneParamButton(title: 'Calibrate Lift Segments v01',
-                              commandType: A133CommandTypes.writeOneParam,
-                              parameterIndex: A133ParameterIndexTypes.liftSegments,
-                              value: 15
-                          ),
-                          _oneParamButton(title: 'Calibrate Lift Segments v02',
+                          _oneParamButton(title: 'Calibrate Lift Segments to 15',
                               commandType: A133CommandTypes.writeControlCommand,
                               parameterIndex: A133ParameterIndexTypes.liftSegments,
                               value: 15
