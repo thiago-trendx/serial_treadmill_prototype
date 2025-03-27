@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'RM6T6/rm6t6_operation.dart';
-import 'a133/a133_screen.dart';
+import 'bike_home/bike_home_screen.dart';
 
-void main() => runApp(const A133Screen());
+void main() => runApp(const BikeHomeScreen());
 
