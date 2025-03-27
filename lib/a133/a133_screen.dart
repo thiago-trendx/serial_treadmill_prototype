@@ -81,7 +81,7 @@ class _A133ScreenState extends State<A133Screen> {
   Future<void> _initNormalPacketTimer() async {
     _normalPacketTimer?.cancel();
     _normalPacketTimer = Timer.periodic(const Duration(milliseconds: 1000), (Timer t) async {
-      List<int> normalDataPacket = [0xff, 0x21, 0x91, 0x53, 0x4f, 0xfe];
+      List<int> normalDataPacket = [0xff, 0x41, 0x01, 0x8f, 0xbe, 0xfe];
       await _sendCommand(normalDataPacket, isNormalPacket: true);
     });
   }
