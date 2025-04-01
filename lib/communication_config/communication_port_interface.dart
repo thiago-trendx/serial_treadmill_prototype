@@ -10,7 +10,7 @@ import 'package:usb_serial_for_android/usb_event.dart';
 import 'package:usb_serial_for_android/usb_port.dart';
 import 'package:usb_serial_for_android/usb_serial_for_android.dart';
 
-import '../bike_home/bike_home_metrics.dart';
+import '../a133/bike_pro_metrics.dart';
 
 part 'serial_to_serial_communication_port.dart';
 part 'usb_to_serial_communication_port.dart';

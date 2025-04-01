@@ -1,6 +1,6 @@
 
-class A133ValuesCalculation {
-  static A133ValuesCalculation instance = A133ValuesCalculation();
+class BikeProValuesCalculation {
+  static BikeProValuesCalculation instance = BikeProValuesCalculation();
 
   int getResistance({required int limitMin,
     required int limitMax,required int valueADC,}) {

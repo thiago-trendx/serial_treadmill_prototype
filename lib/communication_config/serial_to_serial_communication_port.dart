@@ -12,7 +12,7 @@ class SerialToSerialCommunicationPort with TransactionMixin implements Communica
 
   @override
   Future<void> initializePort() async {
-    GoperHomeMetrics.instance.setStatus(TreadmillStatus.idle);
+    BikeProMetrics.instance.setStatus(TreadmillStatus.idle);
 
     await cleanPreviousPort();
     await getPort();
@@ -29,12 +29,12 @@ class SerialToSerialCommunicationPort with TransactionMixin implements Communica
         await _retryGetPort();
       }
     } else {
-      GoperHomeMetrics.instance.setStatus(TreadmillStatus.disconnected);
+      BikeProMetrics.instance.setStatus(TreadmillStatus.disconnected);
     }
   }
 
   Future<void> _retryGetPort() async {
-    GoperHomeMetrics.instance.setStatus(TreadmillStatus.failedToOpenPort);
+    BikeProMetrics.instance.setStatus(TreadmillStatus.failedToOpenPort);
     // tentar novamente
     Future.delayed(const Duration(seconds: 2), () async {
       await getPort();
@@ -49,7 +49,7 @@ class SerialToSerialCommunicationPort with TransactionMixin implements Communica
     port.value?.openReadWrite();
 
     port.value?.config = SerialPortConfig()
-      ..baudRate = 9600
+      ..baudRate = 38400
       ..bits = 8
       ..stopBits = 1
       ..parity = SerialPortParity.none
@@ -60,7 +60,7 @@ class SerialToSerialCommunicationPort with TransactionMixin implements Communica
 
     configureTransaction(serialSerialTransaction, Uint8List.fromList([0xf4]));
 
-    GoperHomeMetrics.instance.setStatus(TreadmillStatus.connected);
+    BikeProMetrics.instance.setStatus(TreadmillStatus.connected);
   }
 
 // envia comando para o inversor e retorna resposta

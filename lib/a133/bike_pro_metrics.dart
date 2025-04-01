@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
-import 'a133_values_calculation.dart';
+import 'bike_pro_values_calculation.dart';
 
-class A133Metrics {
-  static A133Metrics instance = A133Metrics();
+class BikeProMetrics {
+  static BikeProMetrics instance = BikeProMetrics();
 
   int? rawResistanceADC;
   ValueNotifier<int?> rotation = ValueNotifier<int?>(null);
@@ -10,6 +10,7 @@ class A133Metrics {
   int? calibrationLimit1;
   int? calibrationLimit2;
   ValueNotifier<int?> power = ValueNotifier<int?>(null);
+  ValueNotifier<TreadmillStatus> status = ValueNotifier<TreadmillStatus>(TreadmillStatus.idle);
 
   void getMetricsFromPacket({required List<int> normalDtaPacket}) {
     rawResistanceADC = (normalDtaPacket[5] << 8) | normalDtaPacket[4];
@@ -17,15 +18,24 @@ class A133Metrics {
     calibrationLimit1 = (normalDtaPacket[9] << 8) | normalDtaPacket[8];
     calibrationLimit2 = (normalDtaPacket[11] << 8) | normalDtaPacket[10];
 
-    resistance.value = A133ValuesCalculation.instance.getResistance(
+    resistance.value = BikeProValuesCalculation.instance.getResistance(
         limitMin: calibrationLimit1!,
         limitMax: calibrationLimit2!,
         valueADC: rawResistanceADC!
     );
 
-    power.value = A133ValuesCalculation.instance.getPower(
+    power.value = BikeProValuesCalculation.instance.getPower(
         resistanceValue: resistance.value,
         rpmValue: rotation.value,
     );
   }
+
+  void setStatus(TreadmillStatus newValue) => status.value = newValue;
+}
+
+enum TreadmillStatus {
+  idle,
+  connected,
+  disconnected,
+  failedToOpenPort,
 }

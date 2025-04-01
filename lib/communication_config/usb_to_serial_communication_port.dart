@@ -12,7 +12,7 @@ class USBToSerialCommunicationPort with TransactionMixin implements Communicatio
 
   @override
   Future<void> initializePort() async {
-    GoperHomeMetrics.instance.setStatus(TreadmillStatus.idle);
+    BikeProMetrics.instance.setStatus(TreadmillStatus.idle);
 
     await cleanPreviousPort();
     await getPort();
@@ -36,12 +36,12 @@ class USBToSerialCommunicationPort with TransactionMixin implements Communicatio
     } else {
       // depois de setar como desconectado, iremos aguardar o listener das
       // portas usb indicarem que um novo dispositivo usb foi conectado
-      GoperHomeMetrics.instance.setStatus(TreadmillStatus.disconnected);
+      BikeProMetrics.instance.setStatus(TreadmillStatus.disconnected);
     }
   }
 
   Future<void> _retryGetPort() async {
-    GoperHomeMetrics.instance.setStatus(TreadmillStatus.failedToOpenPort);
+    BikeProMetrics.instance.setStatus(TreadmillStatus.failedToOpenPort);
     // tentar novamente
     Future.delayed(const Duration(seconds: 2), () async {
       await getPort();
@@ -54,17 +54,13 @@ class USBToSerialCommunicationPort with TransactionMixin implements Communicatio
     await port.value?.setDTR(true);
     await port.value?.setRTS(true);
     await port.value?.setPortParameters(
-      9600,
-      UsbPort.DATABITS_8,
-      UsbPort.STOPBITS_1,
-      UsbPort.PARITY_NONE,
-    );
+        38400, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
 
     await port.value?.connect();
 
     configureTransaction(port.value!, Uint8List.fromList([0xf4]));
 
-    GoperHomeMetrics.instance.setStatus(TreadmillStatus.connected);
+    BikeProMetrics.instance.setStatus(TreadmillStatus.connected);
 
     await _listenToUsbDeviceConnection();
   }
@@ -76,7 +72,7 @@ class USBToSerialCommunicationPort with TransactionMixin implements Communicatio
 
       // tratamento para o nosso device já atribuído:
       if (event.event!.contains('DETACHED')) {
-        GoperHomeMetrics.instance.setStatus(TreadmillStatus.disconnected);
+        BikeProMetrics.instance.setStatus(TreadmillStatus.disconnected);
         return;
       }
       if (event.event!.contains('ATTACHED')) {

@@ -2,23 +2,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../communication_config/communication_port_interface.dart';
 import '../communication_config/communication_port_switcher.dart';
-import 'bike_home_metrics.dart';
-import 'bike_protocol.dart';
-import 'enums.dart';
+import 'bike_pro_metrics.dart';
 
-class BikeHomeScreenTwo extends StatefulWidget {
-  const BikeHomeScreenTwo({Key? key}) : super(key: key);
+class BikeProScreen extends StatefulWidget {
+  const BikeProScreen({Key? key}) : super(key: key);
 
   @override
-  State<BikeHomeScreenTwo> createState() => _BikeHomeScreenTwoState();
+  State<BikeProScreen> createState() => _BikeProScreenState();
 }
 
-class _BikeHomeScreenTwoState extends State<BikeHomeScreenTwo> {
+class _BikeProScreenState extends State<BikeProScreen> {
   late TextEditingController _textController;
-  Timer? _bikeDataReadTimer;
+  Timer? _normalDataPacketTimer;
   final List<Widget> _serialData = [];
   final List<String> _hexCodeSent = [];
-  ValueNotifier<DateTime?> lastBikeDataSent = ValueNotifier<DateTime?>(null);
+  ValueNotifier<DateTime?> lastNormalPacketDataSent = ValueNotifier<DateTime?>(null);
   ValueNotifier<bool> loadingRetry = ValueNotifier<bool>(false);
 
   @override
@@ -32,23 +30,21 @@ class _BikeHomeScreenTwoState extends State<BikeHomeScreenTwo> {
   void dispose() {
     super.dispose();
     _textController.dispose();
-    _bikeDataReadTimer?.cancel();
-    _bikeDataReadTimer = null;
+    _normalDataPacketTimer?.cancel();
+    _normalDataPacketTimer = null;
   }
 
   Future<void> _configAndInitialize() async {
     await CommunicationPortSwitcher.instance.initializePort();
-    if (GoperHomeMetrics.instance.status.value == TreadmillStatus.connected) {
+    if (BikeProMetrics.instance.status.value == TreadmillStatus.connected) {
       _initBikeDataReadTimer();
     }
   }
 
   Future<void> _initBikeDataReadTimer() async {
-    _bikeDataReadTimer?.cancel();
-    _bikeDataReadTimer = Timer.periodic(const Duration(milliseconds: 150), (Timer t) async {
-      List<int> bikeDataReadCmd = TreadmillProtocol.readCommandToInverter(
-          type: CommandType.readBikeData);
-      await _sendCommand(bikeDataReadCmd, isBikeDataInfo: true);
+    _normalDataPacketTimer?.cancel();
+    _normalDataPacketTimer = Timer.periodic(const Duration(milliseconds: 150), (Timer t) async {
+      await _sendCommand([0xff, 0x41, 0x01, 0x8f, 0xbe, 0xfe], isBikeDataInfo: true);
     });
   }
 
@@ -56,8 +52,8 @@ class _BikeHomeScreenTwoState extends State<BikeHomeScreenTwo> {
     var response = await CommunicationPortSwitcher.instance.sendDataToInverter(dataToSend);
 
     if (isBikeDataInfo) {
-      lastBikeDataSent.value = DateTime.now();
-      if (response != null) GoperHomeMetrics.instance.getMetricsFromPacket(answerHex: response);
+      lastNormalPacketDataSent.value = DateTime.now();
+      if (response != null) BikeProMetrics.instance.getMetricsFromPacket(normalDtaPacket: response);
       //return;
     }
 
@@ -92,7 +88,7 @@ class _BikeHomeScreenTwoState extends State<BikeHomeScreenTwo> {
               child: Column(
                   children: <Widget>[
                     ValueListenableBuilder(
-                        valueListenable: GoperHomeMetrics.instance.status,
+                        valueListenable: BikeProMetrics.instance.status,
                         builder: (BuildContext context, TreadmillStatus value, Widget? child) {
                           if (value == TreadmillStatus.failedToOpenPort) {
                             return Text(
@@ -142,7 +138,7 @@ class _BikeHomeScreenTwoState extends State<BikeHomeScreenTwo> {
                                     : const Text('Connection type: USB adapter'),
                                 const SizedBox(height: 20),
                                 CommunicationPortSwitcher.instance
-                                  .communicationPort is SerialToSerialCommunicationPort
+                                    .communicationPort is SerialToSerialCommunicationPort
                                     ? Text(
                                     'Details: ${serialToSerial.port.toString()}\n')
                                     : Text(
@@ -161,7 +157,7 @@ class _BikeHomeScreenTwoState extends State<BikeHomeScreenTwo> {
                       children: [
                         ElevatedButton(
                           onPressed: () {
-                            _bikeDataReadTimer?.cancel();
+                            _normalDataPacketTimer?.cancel();
                           },
                           child: const Text("STOP Bike Data Reading"),
                         ),
@@ -183,7 +179,7 @@ class _BikeHomeScreenTwoState extends State<BikeHomeScreenTwo> {
                           children: [
                             const Text('Periodic Bike Data Reading'),
                             ValueListenableBuilder(
-                                valueListenable: lastBikeDataSent,
+                                valueListenable: lastNormalPacketDataSent,
                                 builder: (BuildContext context, DateTime? lastCmdSent, Widget? child) {
                                   return Text(
                                       'Last call: ${lastCmdSent ?? ''}'
@@ -195,7 +191,7 @@ class _BikeHomeScreenTwoState extends State<BikeHomeScreenTwo> {
                         Column(
                           children: [
                             ValueListenableBuilder(
-                                valueListenable: GoperHomeMetrics.instance.resistance,
+                                valueListenable: BikeProMetrics.instance.resistance,
                                 builder: (BuildContext context, int? value, Widget? child) {
                                   return Text(
                                     'RESISTÊNCIA: $value',
@@ -204,7 +200,7 @@ class _BikeHomeScreenTwoState extends State<BikeHomeScreenTwo> {
                                 }),
                             const SizedBox(height: 15),
                             ValueListenableBuilder(
-                                valueListenable: GoperHomeMetrics.instance.rotation,
+                                valueListenable: BikeProMetrics.instance.rotation,
                                 builder: (BuildContext context, int? value, Widget? child) {
                                   return Text(
                                     'ROTAÇÃO: $value',
@@ -213,7 +209,7 @@ class _BikeHomeScreenTwoState extends State<BikeHomeScreenTwo> {
                                 }),
                             const SizedBox(height: 15),
                             ValueListenableBuilder(
-                                valueListenable: GoperHomeMetrics.instance.power,
+                                valueListenable: BikeProMetrics.instance.power,
                                 builder: (BuildContext context, int? value, Widget? child) {
                                   return Text(
                                     'POTÊNCIA: $value',
