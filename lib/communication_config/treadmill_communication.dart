@@ -49,29 +49,23 @@ class TreadmillCommunication {
   }
 
   Future<SerialPort?> getSerialPort() async {
-    print('aqui get serial port 01');
     final List<String> availablePorts = ['/dev/ttyS4', '/dev/ttyS3'];
 
     for (var port in availablePorts) {
       final SerialPort serialPort = SerialPort(port);
 
       try {
-        print('aqui get serial port 02');
         serialPort.openReadWrite();
-
-        serialPort.write(Uint8List.fromList([246, 16, 6, 244]));
 
         await Future.delayed(const Duration(milliseconds: 500));
 
         final Uint8List response = serialPort.read(7);
 
         if (response.isNotEmpty && response[0] == 0xf1) {
-          print('aqui get serial port 02');
           serialPort.close();
           return serialPort;
         }
       } catch (e) {
-        print('aqui get serial port 03: $e');
         serialPort.close();
         continue;
       }
