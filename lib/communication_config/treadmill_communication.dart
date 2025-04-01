@@ -24,14 +24,16 @@ class TreadmillCommunication {
       TreadmillCommunicationEnum.undefined;
 
   Future<void> getTreadmillCommunication() async {
+    print('aqui communication 01');
     if (await _checkUSBPortAvailable()) {
+      print('aqui communication 02');
       treadmillCommunicationEnum = TreadmillCommunicationEnum.usbToSerial;
       return;
-    } else {
-      if (await _checkSerialPortAvailable()) {
-        treadmillCommunicationEnum = TreadmillCommunicationEnum.serialToSerial;
-        return;
-      }
+    }
+    if (await _checkSerialPortAvailable()) {
+      print('aqui communication 03');
+      treadmillCommunicationEnum = TreadmillCommunicationEnum.serialToSerial;
+      return;
     }
   }
 
@@ -47,12 +49,14 @@ class TreadmillCommunication {
   }
 
   Future<SerialPort?> getSerialPort() async {
+    print('aqui get serial port 01');
     final List<String> availablePorts = ['/dev/ttyS4', '/dev/ttyS3'];
 
     for (var port in availablePorts) {
       final SerialPort serialPort = SerialPort(port);
 
       try {
+        print('aqui get serial port 02');
         serialPort.openReadWrite();
 
         serialPort.config = SerialPortConfig()
@@ -69,10 +73,12 @@ class TreadmillCommunication {
         final Uint8List response = serialPort.read(7);
 
         if (response.isNotEmpty && response[0] == 0xf1) {
+          print('aqui get serial port 02');
           serialPort.close();
           return serialPort;
         }
-      } catch (_) {
+      } catch (e) {
+        print('aqui get serial port 03: $e');
         serialPort.close();
         continue;
       }
@@ -91,6 +97,7 @@ class TreadmillCommunication {
       }
     }
 
+    print('aqui usb não disponível');
     return false;
   }
 }

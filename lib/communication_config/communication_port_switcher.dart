@@ -27,13 +27,17 @@ class CommunicationPortSwitcher implements CommunicationPortInterface {
   Future<void> cleanPreviousPort() async => communicationPort.cleanPreviousPort();
 
   Future<CommunicationPortInterface> _getCommunicationPort() async {
+    print('aqui communication port 01');
     if (TreadmillCommunication.instance.isUndefined) {
+      print('aqui communication port 02');
       await TreadmillCommunication.instance.getTreadmillCommunication();
     }
 
     if (TreadmillCommunication.instance.isSerialToSerial) {
+      print('aqui communication port 03');
       return SerialToSerialCommunicationPort();
     } else {
+      print('aqui communication port 04');
       return USBToSerialCommunicationPort();
     }
   }
