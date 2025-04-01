@@ -49,7 +49,7 @@ class SerialToSerialCommunicationPort with TransactionMixin implements Communica
     port.value?.openReadWrite();
 
     port.value?.config = SerialPortConfig()
-      ..baudRate = 9600
+      ..baudRate = 38400
       ..bits = 8
       ..stopBits = 1
       ..parity = SerialPortParity.none

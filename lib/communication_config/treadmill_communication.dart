@@ -59,8 +59,6 @@ class TreadmillCommunication {
         print('aqui get serial port 02');
         serialPort.openReadWrite();
 
-        serialPort.write(Uint8List.fromList([246, 16, 6, 244]));
-
         await Future.delayed(const Duration(milliseconds: 500));
 
         final Uint8List response = serialPort.read(7);

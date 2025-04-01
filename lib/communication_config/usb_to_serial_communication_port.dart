@@ -54,7 +54,7 @@ class USBToSerialCommunicationPort with TransactionMixin implements Communicatio
     await port.value?.setDTR(true);
     await port.value?.setRTS(true);
     await port.value?.setPortParameters(
-      9600,
+      38400,
       UsbPort.DATABITS_8,
       UsbPort.STOPBITS_1,
       UsbPort.PARITY_NONE,
