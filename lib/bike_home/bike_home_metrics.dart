@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 class GoperHomeMetrics {
   static GoperHomeMetrics instance = GoperHomeMetrics();
 
+  ValueNotifier<TreadmillStatus> status = ValueNotifier<TreadmillStatus>(TreadmillStatus.idle);
   ValueNotifier<int?> power = ValueNotifier<int?>(null);
   ValueNotifier<int?> rotation = ValueNotifier<int?>(null);
   ValueNotifier<int?> resistance = ValueNotifier<int?>(null);
@@ -13,4 +14,13 @@ class GoperHomeMetrics {
     resistance.value = answerHex[5];
   }
 
+  void setStatus(TreadmillStatus newValue) => status.value = newValue;
+
+}
+
+enum TreadmillStatus {
+  idle,
+  connected,
+  disconnected,
+  failedToOpenPort,
 }
