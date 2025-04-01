@@ -31,7 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   usb_serial_for_android: ^0.0.9
-  flutter_libserialport: 0.2.3
+  flutter_libserialport: 0.4.0
   collection: ^1.15.0-nullsafety.4
 
   # The following adds the Cupertino Icons font to your application.
