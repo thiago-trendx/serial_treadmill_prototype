@@ -1,12 +1,9 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:usb_serial_for_android/transaction.dart';
-import 'package:usb_serial_for_android/usb_device.dart';
-import 'package:usb_serial_for_android/usb_event.dart';
-import 'package:usb_serial_for_android/usb_port.dart';
-import 'package:usb_serial_for_android/usb_serial_for_android.dart';
+import '../communication_config/communication_port_interface.dart';
+import '../communication_config/communication_port_switcher.dart';
 import 'a133_command_enums.dart';
+import 'a133_metrics.dart';
 import 'a133_protocol.dart';
 
 class A133Screen extends StatefulWidget {
@@ -17,67 +14,40 @@ class A133Screen extends StatefulWidget {
 }
 
 class _A133ScreenState extends State<A133Screen> {
-  UsbPort? _port;
-  String _status = "Idle";
-  List<Widget> _ports = [];
   final List<Widget> _serialData = [];
   final List<Widget> _normalDataAnswer = [];
-  Transaction<Uint8List>? _transaction;
-  UsbDevice? _device;
-
   final List<String> _hexCodeSent = [];
   late TextEditingController _speedTextController;
   late TextEditingController _inclinationTextController;
   Timer? _normalPacketTimer;
   ValueNotifier<DateTime?> lastNormalPacketSent = ValueNotifier<DateTime?>(null);
-
-  Future<bool> _connectTo(UsbDevice? device) async {
-    _serialData.clear();
-    _normalDataAnswer.clear();
-    if (_transaction != null) {
-      _transaction!.dispose();
-      _transaction = null;
-    }
-    if (_port != null) {
-      _port!.close();
-      _port = null;
-    }
-    if (device == null) {
-      _device = null;
-      setState(() {
-        _status = "Disconnected";
-      });
-      return true;
-    }
-
-    //_port = await device.create();
-    // You can customize your driver and the port number
-    _port = await device.create(UsbSerial.CH34x, 0);
-    if (await (_port!.open()) != true) {
-      setState(() {
-        _status = "Failed to open port";
-      });
-      return false;
-    }
-    _device = device;
-
-    await _port!.setDTR(true);
-    await _port!.setRTS(true);
-    await _port!.setPortParameters(
-        38400, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
-
-    await _port!.connect();
-
-    _transaction = Transaction.terminated(
-        _port?.inputStream as Stream<Uint8List>, Uint8List.fromList([0xfe]));
-
-    setState(() {
-      _status = "Connected";
-    });
-    await _initNormalPacketTimer();
-    return true;
+  ValueNotifier<bool> loadingRetry = ValueNotifier<bool>(false);
+  
+  @override
+  void initState() {
+    super.initState();
+    _speedTextController = TextEditingController();
+    _inclinationTextController = TextEditingController();
+    _configAndInitialize();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+    _speedTextController.dispose();
+    _inclinationTextController.dispose();
+    _normalPacketTimer?.cancel();
+    _normalPacketTimer = null;
+  }
+
+  Future<void> _configAndInitialize() async {
+    await CommunicationPortSwitcher.instance.initializePort();
+    if (A133Metrics.instance.status.value == TreadmillStatus.connected) {
+      _initNormalPacketTimer();
+    }
+  }
+  
+  
   Future<void> _initNormalPacketTimer() async {
     _normalPacketTimer?.cancel();
     _normalPacketTimer = Timer.periodic(const Duration(milliseconds: 1000), (Timer t) async {
@@ -87,8 +57,7 @@ class _A133ScreenState extends State<A133Screen> {
   }
 
   Future<void> _sendCommand(List<int>? dataToSend, {required bool isNormalPacket}) async {
-    var response = await _transaction?.transaction(_port!, Uint8List
-        .fromList(dataToSend!), const Duration(seconds: 1));
+    var response = await CommunicationPortSwitcher.instance.sendDataToInverter(dataToSend!);
 
     if (isNormalPacket) {
       lastNormalPacketSent.value = DateTime.now();
@@ -114,7 +83,7 @@ class _A133ScreenState extends State<A133Screen> {
       return;
     }
 
-    _dealWithHexSent(dataToSend!);
+    _dealWithHexSent(dataToSend);
 
     List<String> hexResponse = [];
     if (response != null) {
@@ -131,51 +100,6 @@ class _A133ScreenState extends State<A133Screen> {
     });
   }
 
-  void _getPorts() async {
-    _ports = [];
-    List<UsbDevice> devices = await UsbSerial.listDevices();
-    if (!devices.contains(_device)) {
-      _connectTo(null);
-    }
-
-    for (var device in devices) {
-      _ports.add(ListTile(
-          leading: const Icon(Icons.usb),
-          title: Text(device.productName ?? 'no ProductName specified'),
-          subtitle: Text(device.manufacturerName ?? 'no ManufactureName specified'),
-          trailing: ElevatedButton(
-            child: Text(_device == device ? "Disconnect" : "Connect"),
-            onPressed: () {
-              _connectTo(_device == device ? null : device).then((res) {
-                _getPorts();
-              });
-            },
-          )));
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _speedTextController = TextEditingController();
-    _inclinationTextController = TextEditingController();
-    UsbSerial.usbEventStream!.listen((UsbEvent event) {
-      _getPorts();
-    });
-
-    _getPorts();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _speedTextController.dispose();
-    _inclinationTextController.dispose();
-    _normalPacketTimer?.cancel();
-    _normalPacketTimer = null;
-    _connectTo(null);
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -187,18 +111,69 @@ class _A133ScreenState extends State<A133Screen> {
             child: SingleChildScrollView(
               child: Column(
                   children: <Widget>[
-                    Text(
-                        _ports.isNotEmpty
-                            ? "Available Serial Ports"
-                            : "No serial devices available",
-                        style: Theme.of(context).textTheme.headline6),
-                    ..._ports,
-                    const SizedBox(height: 40),
-                    Text(
-                      'Connection Info:',
-                       style: Theme.of(context).textTheme.headline6),
-                    Text('Status: $_status\n'),
-                    Text('Details: ${_port.toString()}\n'),
+                    ValueListenableBuilder(
+                        valueListenable: A133Metrics.instance.status,
+                        builder: (BuildContext context, TreadmillStatus value, Widget? child) {
+                          if (value == TreadmillStatus.failedToOpenPort) {
+                            return Text(
+                                "Fail to communicate with equipment",
+                                style: Theme.of(context).textTheme.headline6);
+                          }
+                          if (value == TreadmillStatus.disconnected) {
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                    "Status: Disconnected",
+                                    style: Theme.of(context).textTheme.headline6),
+                                const SizedBox(width: 40),
+                                ValueListenableBuilder(
+                                    valueListenable: loadingRetry,
+                                    builder: (BuildContext context, bool loading, Widget? child) {
+                                      if (loading) {
+                                        return const CircularProgressIndicator();
+                                      }
+                                      return ElevatedButton(
+                                        onPressed: () async {
+                                          loadingRetry.value = true;
+                                          await Future.delayed(const Duration(seconds: 1));
+                                          _configAndInitialize();
+                                          loadingRetry.value = false;
+                                        },
+                                        child: const Text("Retry connection"),
+                                      );
+                                    }),
+                              ],
+                            );
+                          }
+                          if (value == TreadmillStatus.connected) {
+                            SerialToSerialCommunicationPort serialToSerial = SerialToSerialCommunicationPort
+                                .serialToSerialCommunicationPort;
+                            USBToSerialCommunicationPort uSBToSerialCommunicationPort = USBToSerialCommunicationPort
+                                .uSBToSerialCommunicationPort;
+                            return Column(
+                              children: [
+                                Text("Status: Connected",
+                                    style: Theme.of(context).textTheme.headline6),
+                                const SizedBox(height: 20),
+                                CommunicationPortSwitcher.instance
+                                    .communicationPort is SerialToSerialCommunicationPort
+                                    ? const Text('Connection type: Serial cable')
+                                    : const Text('Connection type: USB adapter'),
+                                const SizedBox(height: 20),
+                                CommunicationPortSwitcher.instance
+                                    .communicationPort is SerialToSerialCommunicationPort
+                                    ? Text(
+                                    'Details: ${serialToSerial.port.toString()}\n')
+                                    : Text(
+                                    'Details: ${uSBToSerialCommunicationPort.port.toString()}\n')
+                              ],
+                            );
+                          }
+                          return Text(
+                              "Idle... trying to connect",
+                              style: Theme.of(context).textTheme.headline6);
+                        }),
                     const SizedBox(height: 40),
                     Text(
                         'Quick Commands:',
@@ -264,12 +239,7 @@ class _A133ScreenState extends State<A133Screen> {
                                   ),
                                 ),
                                 trailing: ElevatedButton(
-                                  onPressed: _port == null
-                                      ? null
-                                      : () async {
-                                    if (_port == null) {
-                                      return;
-                                    }
+                                  onPressed: () async {
                                     int data = int.parse(_speedTextController.text);
                                     List<int>? dataToSend =
                                     A133Protocol.formatOneParameterCmd(value: data,
@@ -300,12 +270,7 @@ class _A133ScreenState extends State<A133Screen> {
                                   ),
                                 ),
                                 trailing: ElevatedButton(
-                                  onPressed: _port == null
-                                      ? null
-                                      : () async {
-                                    if (_port == null) {
-                                      return;
-                                    }
+                                  onPressed: () async {
                                     int data = int.parse(_inclinationTextController.text);
                                     List<int>? dataToSend =
                                     A133Protocol.formatOneParameterCmd(value: data,
